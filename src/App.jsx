@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { BrowserRouter, Routes, Route, Outlet, Link, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { BulletinModal } from './BulletinModal';
 import DashboardPaiements from './DashboardPaiements';
+import DashboardActivities from './DashboardActivities';
+import PublicActivitiesPage from './PublicActivitiesPage';
 import { Home, Info, User, Activity, Phone, LogIn, UserPlus, Grid, Users, BookOpen, Clock, Settings, FileText, MessageSquare, Heart, Bus, Star, Award, ShieldCheck, HeartHandshake, Edit, Trash2, X, Calendar, UserX, Lock, ChevronDown, ChevronRight, CheckCircle, Menu, CreditCard, Eye, EyeOff } from 'lucide-react';
 
 export const OFFICIAL_SUBJECTS = [
@@ -127,13 +129,20 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (e, demoId, demoPass) => {
+    if (e) e.preventDefault();
+    const loginIdentifiant = demoId || creds.identifiant;
+    const loginPass = demoPass || creds.motDePasse;
+    
+    if (demoId && demoPass) {
+      setCreds({ identifiant: demoId, motDePasse: demoPass });
+    }
+
     try {
       const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(creds)
+        body: JSON.stringify({ identifiant: loginIdentifiant, motDePasse: loginPass })
       });
       const data = await res.json();
       if (res.ok) {
@@ -145,6 +154,14 @@ function LoginPage() {
     } catch(err) { setError("Erreur réseau"); }
   };
 
+  const demoAccounts = [
+    { label: "Directeur", id: "directeur@gmail.com", pass: "directeur2026", color: "#b8860b" },
+    { label: "Administratif", id: "scolarite@gmail.com", pass: "scolarite2026", color: "#3a8c6e" },
+    { label: "Professeur", id: "alilou@gmail.com", pass: "aliali2026", color: "#0369a1" },
+    { label: "Parent", id: "med@gmail.com", pass: "medmed2026", color: "#8b5cf6" },
+    { label: "Élève", id: "EXC-2026-0013", pass: "eleve2026", color: "#ec4899" },
+  ];
+
   return (
     <div className="container py-20 flex justify-center">
       <div className="card w-full" style={{ maxWidth: '400px' }}>
@@ -153,7 +170,7 @@ function LoginPage() {
           <p className="text-muted">Accédez à votre espace sécurisé</p>
         </div>
         {error && <div className="p-3 mb-4 text-white bg-red-500 rounded text-sm">{error}</div>}
-        <form onSubmit={handleLogin}>
+        <form onSubmit={(e) => handleLogin(e)}>
           <div className="input-group">
             <label className="input-label">Identifiant</label>
             <input type="text" className="input-field" placeholder="Email ou code" required value={creds.identifiant} onChange={e => setCreds({...creds, identifiant: e.target.value})} />
@@ -184,6 +201,28 @@ function LoginPage() {
             Pas encore de compte ? <Link to="/signup" className="text-primary font-bold">S'inscrire</Link>
           </div>
         </form>
+
+        <div style={{ marginTop: '32px', borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
+          <p style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Comptes de Démonstration</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {demoAccounts.map((acc, i) => (
+              <button 
+                key={i} 
+                type="button"
+                onClick={() => handleLogin(null, acc.id, acc.pass)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                onMouseOver={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
+                onMouseOut={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: acc.color }}></div>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#334155' }}>{acc.label}</span>
+                </div>
+                <span style={{ fontSize: '12px', color: '#64748b' }}>Autologin &rarr;</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -625,6 +664,7 @@ function DashboardLayout() {
             <>
               <div className="text-xs font-bold text-muted mb-2 px-2 uppercase mt-6 text-primary">Direction & Admin</div>
               <Link to="/dashboard/annonces" className="sidebar-link"><FileText size={18} /> Gestion des Annonces</Link>
+              <Link to="/dashboard/activites" className="sidebar-link"><Star size={18} /> Gestion des Activités</Link>
               <Link to="/dashboard/clubs" className="sidebar-link"><Award size={18} /> Gestion des Clubs</Link>
               <Link to="/dashboard/classes" className="sidebar-link"><BookOpen size={18} /> Gestion des Classes</Link>
               <Link to="/dashboard/paiements" className="sidebar-link"><CreditCard size={18} /> Gestion Paiements</Link>
@@ -4481,7 +4521,7 @@ function App() {
         <Route path="/" element={<PublicLayout />}>
           <Route index element={<HomePage />} />
           <Route path="about" element={<AboutPage />} />
-          <Route path="activities" element={<EmptyPage title="Activités" description="Clubs, événements culturels, sorties scolaires et projets pédagogiques." />} />
+          <Route path="activities" element={<PublicActivitiesPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignUpPage />} />
@@ -4490,6 +4530,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="annonces" element={<DashboardAnnonces />} />
+          <Route path="activites" element={<DashboardActivities />} />
           <Route path="clubs" element={<DashboardClubs />} />
           <Route path="users-list" element={<DashboardUsersList />} />
           <Route path="users" element={<DashboardAdminUsers />} />

@@ -33,6 +33,7 @@ import classRoutes from './routes/classRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import clubRoutes from './routes/clubRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
+import activityRoutes from './routes/activityRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 
 // Route de test
@@ -45,6 +46,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/activities', activityRoutes);
 app.use('/api/stats', statsRoutes);
 
 // Lancement du serveur
