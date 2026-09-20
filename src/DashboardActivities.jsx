@@ -16,7 +16,7 @@ export default function DashboardActivities() {
 
   const fetchActivities = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/activities');
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/activities`);
       const data = await res.json();
       setActivities(Array.isArray(data) ? data : []);
     } catch(err) { console.error(err); }
@@ -44,7 +44,7 @@ export default function DashboardActivities() {
   const handleDelete = async (id) => {
     if(window.confirm("Supprimer cette activité ?")) {
       try {
-        await fetch(`http://localhost:5000/api/activities/${id}`, { method: 'DELETE' });
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/activities/${id}`, { method: 'DELETE' });
         fetchActivities();
       } catch(err) { console.error(err); }
     }
@@ -68,13 +68,13 @@ export default function DashboardActivities() {
 
     try {
       if (editingId) {
-        await fetch(`http://localhost:5000/api/activities/${editingId}`, {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/activities/${editingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else {
-        await fetch('http://localhost:5000/api/activities', {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/activities`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

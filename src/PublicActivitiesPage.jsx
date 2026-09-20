@@ -22,7 +22,7 @@ export default function PublicActivitiesPage() {
   };
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/activities')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/activities`)
       .then(res => res.json())
       .then(data => setActivities(Array.isArray(data) ? data : []))
       .catch(err => console.error(err));

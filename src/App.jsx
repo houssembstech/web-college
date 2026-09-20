@@ -139,7 +139,7 @@ function LoginPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifiant: loginIdentifiant, motDePasse: loginPass })
@@ -246,7 +246,7 @@ function SignUpPage() {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -522,7 +522,7 @@ function AboutClubsList() {
   const [clubs, setClubs] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/clubs')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/clubs`)
       .then(res => res.json())
       .then(data => { if (Array.isArray(data)) setClubs(data); })
       .catch(err => console.error(err));
@@ -608,7 +608,7 @@ function DashboardLayout() {
   const handleLogout = async () => {
     if (user && user._id) {
       try {
-        await fetch(`http://localhost:5000/api/auth/logout/${user._id}`, { method: 'POST' });
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/logout/${user._id}`, { method: 'POST' });
       } catch (err) {}
     }
     localStorage.removeItem('lycee_user');
@@ -798,7 +798,7 @@ function EleveDashboard({ user }) {
   // Charger les données de l'élève
   useEffect(() => {
     // Planning
-    fetch(`http://localhost:5000/api/classes/eleve/${user._id}/planning`)
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/eleve/${user._id}/planning`)
       .then(res => res.json())
       .then(data => {
         if (data && data.emploiDuTemps) {
@@ -809,7 +809,7 @@ function EleveDashboard({ user }) {
       .catch(err => console.error(err));
 
     // Clubs
-    fetch('http://localhost:5000/api/clubs')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/clubs`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setAllClubs(data);
@@ -817,7 +817,7 @@ function EleveDashboard({ user }) {
       .catch(err => console.error(err));
 
     // Annonces
-    fetch(`http://localhost:5000/api/announcements/user/${user._id}`)
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/user/${user._id}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setAnnouncementsList(data);
@@ -1123,7 +1123,7 @@ function DashboardPage() {
 
   useEffect(() => {
     if (user._id && user.role !== 'eleve') {
-      fetch(`http://localhost:5000/api/announcements/user/${user._id}`)
+      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/user/${user._id}`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) setAnnouncementsList(data);
@@ -1131,7 +1131,7 @@ function DashboardPage() {
         .catch(err => console.error("Erreur chargement annonces:", err));
 
       if (isDirectionRole) {
-        fetch('http://localhost:5000/api/stats')
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/stats`)
           .then(res => res.json())
           .then(data => {
             if (data && data.totalEleves !== undefined) setStats(data);
@@ -1295,7 +1295,7 @@ function DashboardUsersList() {
 
   const handleViewBulletin = async (enfant) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/eleve/${enfant._id}/planning`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/eleve/${enfant._id}/planning`);
       const data = await res.json();
       const className = res.ok ? data.className : "INCONNUE";
       setBulletinData({ eleve: enfant, className, emploiDuTemps: data.emploiDuTemps });
@@ -1305,7 +1305,7 @@ function DashboardUsersList() {
   };
 
   const fetchUsers = () => {
-    fetch('http://localhost:5000/api/auth/users')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/users`)
       .then(res => res.json())
       .then(data => {
         setUsers(data);
@@ -1324,7 +1324,7 @@ function DashboardUsersList() {
   const handleDelete = async (id) => {
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/users/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/users/${id}`, { method: 'DELETE' });
       if (res.ok) fetchUsers();
     } catch (err) {
       alert("Erreur lors de la suppression");
@@ -1345,7 +1345,7 @@ function DashboardUsersList() {
     e.preventDefault();
     try {
       const matieresArray = editForm.matieres.split(',').map(m => m.trim()).filter(m => m !== '');
-      const res = await fetch(`http://localhost:5000/api/auth/users/${editingUser._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/users/${editingUser._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...editForm, matieres: matieresArray })
@@ -1615,7 +1615,7 @@ function DashboardAdminUsers() {
     setStatus({ type: '', message: '' });
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/admin-create', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/admin-create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1742,7 +1742,7 @@ function DashboardClasses() {
   const [formData, setFormData] = useState({ nom: '', niveau: '7ème année de base', anneeScolaire: '2026/2027' });
 
   const fetchClasses = () => {
-    fetch('http://localhost:5000/api/classes')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`)
       .then(res => res.json())
       .then(data => { setClasses(data); setLoading(false); })
       .catch(err => { console.error(err); setLoading(false); });
@@ -1753,7 +1753,7 @@ function DashboardClasses() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const url = isEditing ? `http://localhost:5000/api/classes/${selectedClassId}` : 'http://localhost:5000/api/classes';
+      const url = isEditing ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/${selectedClassId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`;
       const method = isEditing ? 'PUT' : 'POST';
       const res = await fetch(url, {
         method,
@@ -1776,7 +1776,7 @@ function DashboardClasses() {
     e.stopPropagation();
     if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette classe définitivement ?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/${id}`, { method: 'DELETE' });
       if (res.ok) fetchClasses();
     } catch (err) { alert("Erreur de suppression"); }
   };
@@ -1872,14 +1872,14 @@ function DashboardClassDetail() {
   const [newSeance, setNewSeance] = useState({ jour: 'Lundi', heureDebut: '08:00', heureFin: '10:00', matiere: '', professeur: '', salle: '' });
 
   const fetchDetails = () => {
-    fetch('http://localhost:5000/api/classes')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`)
       .then(res => res.json())
       .then(data => {
         const found = data.find(c => c._id === id);
         if (found) setCls(found);
       });
 
-    fetch('http://localhost:5000/api/auth/users')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/users`)
       .then(res => res.json())
       .then(data => {
         const extractedEleves = [];
@@ -1899,7 +1899,7 @@ function DashboardClassDetail() {
     e.preventDefault();
     if (!selectedEleveId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/${id}/eleves`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/${id}/eleves`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ eleveId: selectedEleveId })
@@ -1914,7 +1914,7 @@ function DashboardClassDetail() {
   const handleRetirerEleve = async (eleveId) => {
     if (!window.confirm("Voulez-vous vraiment retirer cet élève de cette classe ?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/${id}/eleves/${eleveId}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/${id}/eleves/${eleveId}`, { method: 'DELETE' });
       if (res.ok) fetchDetails();
     } catch (err) { alert("Erreur retrait élève"); }
   };
@@ -1926,7 +1926,7 @@ function DashboardClassDetail() {
     const updatedSchedule = [...currentSchedule, newSeance];
 
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/${id}/emploiDuTemps`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/${id}/emploiDuTemps`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emploiDuTemps: updatedSchedule })
@@ -1946,7 +1946,7 @@ function DashboardClassDetail() {
     const updatedSchedule = [...(cls.emploiDuTemps || [])];
     updatedSchedule.splice(idx, 1);
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/${id}/emploiDuTemps`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/${id}/emploiDuTemps`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emploiDuTemps: updatedSchedule })
@@ -2193,7 +2193,7 @@ function DashboardDossiersEnfants() {
     e.preventDefault();
     if (!editingEnfant) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/users/${editingEnfant._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/users/${editingEnfant._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editFormData)
@@ -2224,7 +2224,7 @@ function DashboardDossiersEnfants() {
        return;
     }
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/users/${user._id}/create-enfant`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/users/${user._id}/create-enfant`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newEnfant)
@@ -2253,7 +2253,7 @@ function DashboardDossiersEnfants() {
   const fetchEnfants = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/users/${user._id}/enfants`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/users/${user._id}/enfants`);
       const data = await res.json();
       if (res.ok) setEnfants(data);
     } catch(err) { console.error(err); }
@@ -2265,7 +2265,7 @@ function DashboardDossiersEnfants() {
     setPlanningData(null);
     setSuiviData(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/eleve/${enfant._id}/planning`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/eleve/${enfant._id}/planning`);
       const data = await res.json();
       const className = res.ok ? data.className : "INCONNUE";
       setBulletinData({ eleve: enfant, className, emploiDuTemps: data.emploiDuTemps });
@@ -2278,7 +2278,7 @@ function DashboardDossiersEnfants() {
     setBulletinData(null);
     setSuiviData(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/eleve/${enfant._id}/planning`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/eleve/${enfant._id}/planning`);
       const data = await res.json();
       if (res.ok) {
         setPlanningData({ eleve: enfant, className: data.className, emploiDuTemps: data.emploiDuTemps });
@@ -2292,7 +2292,7 @@ function DashboardDossiersEnfants() {
     setPlanningData(null);
     setBulletinData(null);
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/suivi/eleve/${enfant._id}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/suivi/eleve/${enfant._id}`);
       const list = res.ok ? await res.json() : [];
       setSuiviData({
         ...enfant,
@@ -2601,7 +2601,7 @@ function DashboardPresences() {
     const dateStr = getDateForDay(session.jour);
     const profId = typeof session.professeur === 'object' ? session.professeur?._id : session.professeur;
     try {
-      const res = await fetch(`http://localhost:5000/api/classes/suivi/search?dateStr=${dateStr}&heure=${session.heureDebut} - ${session.heureFin}&professeur=${profId}&matiere=${session.matiere}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/suivi/search?dateStr=${dateStr}&heure=${session.heureDebut} - ${session.heureFin}&professeur=${profId}&matiere=${session.matiere}`);
       const data = await res.json();
       const attMap = {};
       session.classe.eleves.forEach(e => attMap[e._id] = 'Présent'); // default
@@ -2622,7 +2622,7 @@ function DashboardPresences() {
   };
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/classes')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`)
       .then(res => res.json())
       .then(data => {
         setClasses(data);
@@ -2744,7 +2744,7 @@ function DashboardPresences() {
                     dateStr
                   }));
                   try {
-                    await fetch('http://localhost:5000/api/classes/suivi', {
+                    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/suivi`, {
                       method: 'POST',
                       headers: {'Content-Type': 'application/json'},
                       body: JSON.stringify(records)
@@ -2773,7 +2773,7 @@ function DashboardPlanning() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/classes')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`)
       .then(res => res.json())
       .then(data => {
         setClasses(data);
@@ -2887,14 +2887,14 @@ function DashboardMessagerie() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/messages/utilisateurs')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/messages/utilisateurs`)
       .then(r => r.json())
       .then(data => setUsers(data.filter(u => u._id !== currentUser?._id)));
   }, []);
 
   const loadMessages = (otherUserId) => {
     if (!currentUser) return;
-    fetch(`http://localhost:5000/api/messages/${currentUser._id}/conversation/${otherUserId}`)
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/messages/${currentUser._id}/conversation/${otherUserId}`)
       .then(r => r.json())
       .then(data => setMessages(data));
   };
@@ -2915,7 +2915,7 @@ function DashboardMessagerie() {
     e.preventDefault();
     if (!messageText.trim()) return;
     try {
-      await fetch('http://localhost:5000/api/messages', {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -3095,7 +3095,7 @@ function DashboardClubs() {
   const [openClasses, setOpenClasses] = useState({});
   const [newEvent, setNewEvent] = useState({ titre: '', date: '', heure: '', lieu: '', description: '' });
 
-  const API_BASE = 'http://localhost:5000';
+  const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}`;
 
   const fetchClubs = async () => {
     try {
@@ -3587,7 +3587,7 @@ function DashboardMonProfil() {
     if(!user) return;
     const fetchPoints = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/classes/suivi/eleve/${user._id}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/suivi/eleve/${user._id}`);
         if (res.ok) {
           const list = await res.json();
           let total = 0;
@@ -3606,7 +3606,7 @@ function DashboardMonProfil() {
     
     const fetchClass = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/classes/eleve/${user._id}/planning`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/eleve/${user._id}/planning`);
         if (res.ok) {
           const data = await res.json();
           if (data.className) setClasseName(data.className);
@@ -3616,7 +3616,7 @@ function DashboardMonProfil() {
     
     const fetchUserProfile = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/auth/user/${user._id}`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/user/${user._id}`);
         if (res.ok) {
           const freshUser = await res.json();
           const merged = { ...user, ...freshUser };
@@ -3629,7 +3629,7 @@ function DashboardMonProfil() {
 
     const fetchAllClubs = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/clubs');
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/clubs`);
         if (res.ok) {
           const data = await res.json();
           setDbClubs(data);
@@ -3664,7 +3664,7 @@ function DashboardMonProfil() {
 
   const handleSaveProfile = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/update-profile/${user._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/update-profile/${user._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editForm)
@@ -4239,7 +4239,7 @@ function DashboardAnnonces() {
 
   const loadData = async () => {
     // Annonces
-    fetch('http://localhost:5000/api/announcements')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setAnnouncements(data);
@@ -4247,7 +4247,7 @@ function DashboardAnnonces() {
       .catch(err => console.error("Erreur chargement annonces:", err));
 
     // Classes
-    fetch('http://localhost:5000/api/classes')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -4300,7 +4300,7 @@ function DashboardAnnonces() {
 
     try {
       const validUserId = (user && user._id && typeof user._id === 'string' && user._id.match(/^[0-9a-fA-F]{24}$/)) ? user._id : null;
-      const res = await fetch('http://localhost:5000/api/announcements', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -4338,7 +4338,7 @@ function DashboardAnnonces() {
   const handleDelete = async (id) => {
     if (!window.confirm('Voulez-vous vraiment supprimer cette annonce ?')) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/announcements/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/announcements/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setAnnouncements(announcements.filter(a => a._id !== id));
       }

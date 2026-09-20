@@ -45,8 +45,8 @@ export default function DashboardPaiements() {
     try {
       setLoading(true);
       const [resEleves, resClasses] = await Promise.all([
-        fetch('http://localhost:5000/api/auth/eleves'),
-        fetch('http://localhost:5000/api/classes')
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/eleves`),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`)
       ]);
       const dataEleves = await resEleves.json();
       const dataClasses = await resClasses.json();
@@ -84,7 +84,7 @@ export default function DashboardPaiements() {
 
     // 2️⃣ Mise à jour silencieuse en base de données
     try {
-      await fetch(`http://localhost:5000/api/auth/${selectedEleve._id}/payment`, {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/${selectedEleve._id}/payment`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
