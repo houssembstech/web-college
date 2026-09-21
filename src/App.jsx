@@ -612,8 +612,30 @@ function DashboardLayout() {
       } catch (err) {}
     }
     localStorage.removeItem('lycee_user');
-    navigate('/');
+    window.location.href = '/';
   };
+
+  useEffect(() => {
+    if (!user) return;
+    const checkSession = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/user/${user._id}`);
+        if (res.ok) {
+          const dbUser = await res.json();
+          // Déconnecter si le compte a été ouvert ailleurs
+          if (dbUser.sessionToken && dbUser.sessionToken !== user.sessionToken) {
+            alert("⚠️ Déconnexion de sécurité : Votre compte a été ouvert sur un autre appareil.");
+            localStorage.removeItem('lycee_user');
+            window.location.href = '/login';
+          }
+        }
+      } catch (err) {}
+    };
+
+    checkSession();
+    const interval = setInterval(checkSession, 15000);
+    return () => clearInterval(interval);
+  }, [user?._id, user?.sessionToken]);
 
   return (
     <div className="dashboard-layout relative">
@@ -636,7 +658,7 @@ function DashboardLayout() {
           </button>
         </div>
 
-        <nav className="flex-col flex" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', paddingRight: '4px', paddingBottom: '20px' }} onClick={(e) => { if (e.target.closest('a')) setMobileMenuOpen(false); }}>
+        <nav className="flex-col flex custom-scrollbar" style={{ flex: 1, minHeight: 0, overflowX: 'hidden', WebkitOverflowScrolling: 'touch', paddingRight: '4px', paddingBottom: '20px' }} onClick={(e) => { if (e.target.closest('a')) setMobileMenuOpen(false); }}>
           <div className="text-xs font-bold text-muted mb-2 px-2 uppercase">Menu Principal</div>
           <Link to="/dashboard" className="sidebar-link active"><Grid size={18} /> Tableau de Bord</Link>
           <Link to="/dashboard/mon-profil" className="sidebar-link"><User size={18} /> Mon Profil</Link>
@@ -3093,7 +3115,15 @@ function DashboardMessagerie() {
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/messages/utilisateurs`)
       .then(r => r.json())
-      .then(data => setUsers(data.filter(u => u._id !== currentUser?._id)));
+      .then(data => setUsers(data.filter(u => {
+        if (u._id === currentUser?._id) return false;
+        const name = u.nom?.toLowerCase() || '';
+        const identifiant = u.identifiant?.toLowerCase() || '';
+        if (name.includes('admin')) return false;
+        if (identifiant.includes('admin')) return false;
+        if (u.role === 'super_admin') return false;
+        return true;
+      })));
   }, []);
 
   const loadMessages = (otherUserId) => {
@@ -3112,7 +3142,9 @@ function DashboardMessagerie() {
   }, [selectedUser]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const sendMessage = async (e) => {
@@ -3133,6 +3165,20 @@ function DashboardMessagerie() {
     } catch(err) {
       console.error(err);
     }
+  };
+
+  const getOfflineSince = (isOnline, updatedAt) => {
+    if (isOnline) return "En ligne";
+    if (!updatedAt) return "";
+    const diffMs = Date.now() - new Date(updatedAt).getTime();
+    if (diffMs < 0) return "À l'instant";
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "À l'instant";
+    if (diffMins < 60) return `Il y a ${diffMins} min`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `Il y a ${diffHours} h`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `Il y a ${diffDays} j`;
   };
 
   const msStyles = {
@@ -3197,7 +3243,7 @@ function DashboardMessagerie() {
                <div style={msStyles.userContent}>
                  <div style={msStyles.userTopLine}>
                    <div style={msStyles.userName} className="capitalize">{u.nom}</div>
-                   <div style={msStyles.userTime}>2 min</div>
+                   <div style={{...msStyles.userTime, color: u.isOnline ? '#34d08c' : '#bbb'}}>{getOfflineSince(u.isOnline, u.updatedAt)}</div>
                  </div>
                  <div style={msStyles.userSubLine} className="capitalize">{u.role}</div>
                </div>
@@ -3240,7 +3286,7 @@ function DashboardMessagerie() {
             </div>
             
             {/* Messages View */}
-            <div style={msStyles.messagesView}>
+            <div style={msStyles.messagesView} ref={messagesEndRef}>
               {messages.length === 0 && <div style={{textAlign: 'center', marginTop: 'auto', marginBottom: 'auto'}}><span style={{color: '#999', fontSize: '13px'}}>Début de la conversation</span></div>}
               
               {messages.map((msg, index) => {
@@ -3265,7 +3311,6 @@ function DashboardMessagerie() {
                   </div>
                 );
               })}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}

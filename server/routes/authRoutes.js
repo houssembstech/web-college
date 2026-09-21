@@ -54,7 +54,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Identifiant ou mot de passe incorrect.' });
     }
 
+    const currentSession = Date.now().toString() + Math.random().toString(36).substring(2);
     user.isOnline = true;
+    user.sessionToken = currentSession;
     await user.save();
 
     res.json({
@@ -67,7 +69,8 @@ router.post('/login', async (req, res) => {
         identifiant: user.identifiant,
         role: user.role,
         photoProfil: user.photoProfil,
-        niveauEtude: user.niveauEtude
+        niveauEtude: user.niveauEtude,
+        sessionToken: currentSession
       }
     });
   } catch (error) {

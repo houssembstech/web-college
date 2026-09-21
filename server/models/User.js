@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   photoProfil: { type: String, required: false },
   matieres: [{ type: String }], // Uniquement pour professeurs
   isOnline: { type: Boolean, default: false }, // Statut en ligne
+  sessionToken: { type: String, default: '' }, // Jeton de session unique (1 seul appareil)
   parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false }, // Lie l'élève à son parent tuteur
   paymentInfo: {
     systeme: { type: String, enum: ['Mensuel', 'Trimestriel', 'Annuel', 'Non défini'], default: 'Non défini' },

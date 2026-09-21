@@ -7,7 +7,7 @@ const router = express.Router();
 // Récupérer la liste des utilisateurs autorisés à communiquer
 router.get('/utilisateurs', async (req, res) => {
   try {
-    const list = await User.find({ role: { $ne: 'eleve' } }, 'nom _id role identifiant photoProfil isOnline');
+    const list = await User.find({ role: { $ne: 'eleve' } }, 'nom _id role identifiant photoProfil isOnline updatedAt');
     res.json(list);
   } catch(err) {
     res.status(500).json({ message: "Erreur" });
