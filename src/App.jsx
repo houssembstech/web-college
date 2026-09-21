@@ -5,7 +5,7 @@ import { BulletinModal } from './BulletinModal';
 import DashboardPaiements from './DashboardPaiements';
 import DashboardActivities from './DashboardActivities';
 import PublicActivitiesPage from './PublicActivitiesPage';
-import { Home, Info, User, Activity, Phone, LogIn, UserPlus, Grid, Users, BookOpen, Clock, Settings, FileText, MessageSquare, Heart, Bus, Star, Award, ShieldCheck, HeartHandshake, Edit, Trash2, X, Calendar, UserX, Lock, ChevronDown, ChevronRight, CheckCircle, Menu, CreditCard, Eye, EyeOff } from 'lucide-react';
+import { Home, Info, User, Mail, Activity, Phone, LogIn, UserPlus, Grid, Users, BookOpen, Clock, Settings, FileText, MessageSquare, Heart, Bus, Star, Award, ShieldCheck, HeartHandshake, Edit, Trash2, X, Calendar, UserX, Lock, ChevronDown, ChevronRight, CheckCircle, Menu, CreditCard, Eye, EyeOff } from 'lucide-react';
 
 export const OFFICIAL_SUBJECTS = [
   "Arabe expression écrite", "Arabe étude de texte", "Arabe.Oral", "ARABE", 
@@ -685,6 +685,7 @@ function DashboardLayout() {
           {isDirection && (
             <>
               <div className="text-xs font-bold text-muted mb-2 px-2 uppercase mt-6 text-primary">Direction & Admin</div>
+              <Link to="/dashboard/boite-reception" className="sidebar-link"><Mail size={18} /> Boîte de Réception</Link>
               <Link to="/dashboard/annonces" className="sidebar-link"><FileText size={18} /> Gestion des Annonces</Link>
               <Link to="/dashboard/activites" className="sidebar-link"><Star size={18} /> Gestion des Activités</Link>
               <Link to="/dashboard/clubs" className="sidebar-link"><Award size={18} /> Gestion des Clubs</Link>
@@ -2120,6 +2121,28 @@ function DashboardClassDetail() {
 }
 
 function ContactPage() {
+  const [formData, setFormData] = useState({ nomComplet: '', contactClient: '', message: '' });
+  const [status, setStatus] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        setStatus('Message envoyé avec succès ! Nous vous recontacterons bientôt.');
+        setFormData({ nomComplet: '', contactClient: '', message: '' });
+      } else {
+        setStatus('Erreur lors de l\'envoi du message.');
+      }
+    } catch (error) {
+      setStatus('Erreur de connexion au serveur.');
+    }
+  };
+
   return (
     <div className="container py-20">
       <div className="text-center mb-12">
@@ -2155,20 +2178,25 @@ function ContactPage() {
         </div>
         <div className="card">
           <h2 className="text-2xl font-bold mb-6">Envoyer un message</h2>
-          <form onSubmit={(e) => e.preventDefault()}>
+          <form onSubmit={handleSubmit}>
+            {status && (
+              <div className={`p-4 mb-4 rounded font-bold text-sm ${status.includes('succès') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {status}
+              </div>
+            )}
             <div className="input-group mb-4">
               <label className="input-label">Nom complet</label>
-              <input type="text" className="input-field" placeholder="Votre nom" />
+              <input type="text" required value={formData.nomComplet} onChange={e => setFormData({...formData, nomComplet: e.target.value})} className="input-field" placeholder="Votre nom complet" />
             </div>
             <div className="input-group mb-4">
               <label className="input-label">Email / Téléphone</label>
-              <input type="text" className="input-field" placeholder="Vos coordonnées" />
+              <input type="text" required value={formData.contactClient} onChange={e => setFormData({...formData, contactClient: e.target.value})} className="input-field" placeholder="Vos coordonnées" />
             </div>
             <div className="input-group mb-4">
               <label className="input-label">Message</label>
-              <textarea className="input-field" rows="4" placeholder="Votre demande..."></textarea>
+              <textarea required value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="input-field" rows="4" placeholder="Votre demande..."></textarea>
             </div>
-            <button className="btn btn-primary w-full py-3">Envoyer</button>
+            <button type="submit" className="btn btn-primary w-full py-3">Envoyer</button>
           </form>
         </div>
       </div>
@@ -4762,6 +4790,122 @@ function DashboardAnnonces() {
     </div>
   );
 }
+function DashboardInbox() {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMessages = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/contact`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Voulez-vous vraiment supprimer ce message ?")) return;
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/contact/${id}`, { method: 'DELETE' });
+      if (res.ok) setMessages(messages.filter(m => m._id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div style={{ paddingBottom: '40px' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '12px', margin: '0 0 8px 0' }}>
+          <Mail size={32} /> Boîte de Réception
+        </h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '16px', margin: 0 }}>Consultez les messages reçus depuis la page de contact publique.</p>
+      </div>
+
+      <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid var(--border-color)' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)' }}>Chargement des messages...</div>
+        ) : messages.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--text-muted)', fontStyle: 'italic', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Mail size={48} style={{ marginBottom: '16px', opacity: 0.2 }} />
+            Aucun message reçu pour le moment.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {messages.map(msg => (
+              <div 
+                key={msg._id} 
+                style={{ 
+                  position: 'relative', 
+                  padding: '24px', 
+                  borderRadius: '16px', 
+                  backgroundColor: '#ffffff', 
+                  border: '1px solid var(--border-color)', 
+                  borderLeft: '4px solid var(--primary)', 
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '16px',
+                  transition: 'box-shadow 0.2s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.boxShadow = '0 8px 16px -4px rgba(0,0,0,0.1)';
+                  const btn = e.currentTarget.querySelector('.trash-btn');
+                  if(btn) btn.style.opacity = '1';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                  const btn = e.currentTarget.querySelector('.trash-btn');
+                  if(btn) btn.style.opacity = '0';
+                }}
+              >
+                <button 
+                  className="trash-btn"
+                  onClick={() => handleDelete(msg._id)} 
+                  style={{ position: 'absolute', top: '16px', right: '16px', opacity: '0', transition: 'all 0.2s ease', backgroundColor: '#fef2f2', color: '#ef4444', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.color = '#ef4444'; }}
+                >
+                  <Trash2 size={18} />
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                  <div style={{ width: '50px', height: '50px', borderRadius: '50%', backgroundColor: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', fontSize: '20px', flexShrink: 0 }}>
+                    {msg.nomComplet.charAt(0).toUpperCase()}
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontWeight: '800', fontSize: '18px', color: 'var(--primary)', margin: '0 0 6px 0', lineHeight: '1' }}>{msg.nomComplet}</h3>
+                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Phone size={14} /> {msg.contactClient}
+                    </div>
+                  </div>
+                  
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', backgroundColor: '#f1f5f9', color: '#64748b', padding: '4px 12px', borderRadius: '9999px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid #e2e8f0' }}>
+                    <Calendar size={12} /> {new Date(msg.createdAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', color: '#334155', fontSize: '14px', border: '1px solid #e2e8f0', fontStyle: 'italic', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                  "{msg.message}"
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -4794,6 +4938,7 @@ function App() {
           <Route path="presences" element={<DashboardPresences />} />
           <Route path="notes-devoirs" element={<EmptyPage title="Notes & Devoirs" description="Interface d'évaluation et communication du travail à faire." />} />
           <Route path="messagerie" element={<DashboardMessagerie />} />
+          <Route path="boite-reception" element={<DashboardInbox />} />
           <Route path="mon-profil" element={<DashboardMonProfil />} />
         </Route>
       </Routes>

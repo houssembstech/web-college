@@ -35,6 +35,7 @@ import clubRoutes from './routes/clubRoutes.js';
 import announcementRoutes from './routes/announcementRoutes.js';
 import activityRoutes from './routes/activityRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import contactRoutes from './routes/ContactRoutes.js';
 
 // Route de test
 app.get('/api/status', (req, res) => {
@@ -48,6 +49,7 @@ app.use('/api/clubs', clubRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Lancement du serveur
 app.listen(PORT, () => {
