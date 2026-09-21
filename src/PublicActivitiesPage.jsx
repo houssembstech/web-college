@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 
 export default function PublicActivitiesPage() {
   const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedAct, setSelectedAct] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
 
@@ -24,8 +25,14 @@ export default function PublicActivitiesPage() {
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/activities`)
       .then(res => res.json())
-      .then(data => setActivities(Array.isArray(data) ? data : []))
-      .catch(err => console.error(err));
+      .then(data => {
+        setActivities(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
   }, []);
 
   return (
@@ -115,7 +122,13 @@ export default function PublicActivitiesPage() {
           ))}
         </div>
 
-        {activities.length === 0 && (
+        {loading ? (
+          <div className="py-20 text-center text-gray-400">
+            <div style={{ width: '48px', height: '48px', borderTop: '3px solid var(--primary)', borderRight: '3px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px auto' }}></div>
+            <p className="text-xl">Chargement des activités...</p>
+            <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : activities.length === 0 && (
           <div className="py-20 text-center text-gray-400">
             <Star size={48} className="mx-auto mb-4 opacity-20" />
             <p className="text-xl">Aucune activité n'est programmée pour le moment.</p>
