@@ -672,11 +672,11 @@ function DashboardLayout() {
               <Link to="/dashboard/users" className="sidebar-link"><UserPlus size={18} /> Création de Comptes</Link>
             </>
           )}
+          
+          <div className="mt-8 border-t pt-4" style={{borderColor: 'var(--border-color)'}}>
+            <button onClick={handleLogout} className="sidebar-link text-muted hover:text-primary w-full text-left font-bold" style={{ color: '#ef4444' }}><LogIn size={18} /> Déconnexion</button>
+          </div>
         </nav>
-
-        <div className="mt-auto">
-          <button onClick={handleLogout} className="sidebar-link text-muted hover:text-primary w-full text-left"><LogIn size={18} /> Déconnexion</button>
-        </div>
       </aside>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -2578,15 +2578,18 @@ function DashboardPresences() {
   const [classes, setClasses] = useState([]);
   const [selectedClassForPresences, setSelectedClassForPresences] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
+  const [customDate, setCustomDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [attendance, setAttendance] = useState({});
 
-  const getDateForDay = (dayName) => {
+  const getIsoDateForDay = (dayName) => {
     const jours = { 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6, 'Dimanche': 0 };
     const targetDay = jours[dayName];
-    if (targetDay === undefined) return new Date().toLocaleDateString('fr-FR');
-    
     const today = new Date();
+    if (targetDay === undefined) {
+      return today.toISOString().split('T')[0];
+    }
+    
     const currentDay = today.getDay();
     const currentDayAdjusted = currentDay === 0 ? 7 : currentDay;
     const targetDayAdjusted = targetDay === 0 ? 7 : targetDay;
@@ -2595,12 +2598,21 @@ function DashboardPresences() {
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + diff);
     
-    return targetDate.toLocaleDateString('fr-FR');
+    // adjust timezone offset to prevent UTC shifting if Timezone is -1
+    const offset = targetDate.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(targetDate.getTime() - offset)).toISOString().slice(0, 10);
+    return localISOTime;
   };
 
-  const loadAttendance = async (session) => {
-    if (!session) return;
-    const dateStr = getDateForDay(session.jour);
+  const toFrDate = (iso) => {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
+  const loadAttendance = async (session, dateIso) => {
+    if (!session || !dateIso) return;
+    const dateStr = toFrDate(dateIso);
     const profId = typeof session.professeur === 'object' ? session.professeur?._id : session.professeur;
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes/suivi/search?dateStr=${dateStr}&heure=${session.heureDebut} - ${session.heureFin}&professeur=${profId}&matiere=${session.matiere}`);
@@ -2620,7 +2632,32 @@ function DashboardPresences() {
 
   const handleSelectSession = (s) => {
     setSelectedSession(s);
-    if(s) loadAttendance(s);
+    if(s) {
+      const activeDate = getIsoDateForDay(s.jour);
+      setCustomDate(activeDate);
+      loadAttendance(s, activeDate);
+    }
+  };
+
+  const handleDateChange = (e) => {
+    const newDate = e.target.value;
+    if (!newDate) return;
+    
+    if (selectedSession) {
+      const selectedDateObj = new Date(newDate);
+      const joursMap = { 'Dimanche': 0, 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6 };
+      const requiredDayIndex = joursMap[selectedSession.jour];
+      
+      if (selectedDateObj.getDay() !== requiredDayIndex) {
+        alert(`Attention ⚠️\nCette séance a lieu tous les ${selectedSession.jour}s.\nVeuillez choisir obligatoirement un ${selectedSession.jour} dans le calendrier.`);
+        return;
+      }
+    }
+
+    setCustomDate(newDate);
+    if(selectedSession) {
+       loadAttendance(selectedSession, newDate);
+    }
   };
 
   useEffect(() => {
@@ -2667,8 +2704,7 @@ function DashboardPresences() {
       <h1 className="text-4xl font-bold mb-2 text-primary flex items-center"><Users className="mr-3" size={32} /> {isDirection ? 'Supervision : Classes & Présences' : 'Classes & Présences'}</h1>
       <p className="text-muted mb-8">{isDirection ? 'Vue globale pour superviser l\'appel et les absences dans toutes les classes.' : 'Sélectionnez une séance pour faire l\'appel et gérer les absences.'}</p>
       
-      {!selectedSession ? (
-         isDirection && !selectedClassForPresences ? (
+      {isDirection && !selectedClassForPresences ? (
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in-up">
              {classes.map(cls => (
                <div key={cls._id} onClick={() => setSelectedClassForPresences(cls)} className="card cursor-pointer hover:border-secondary transition-all text-center border-t-4" style={{borderTopColor: 'var(--primary)'}}>
@@ -2705,23 +2741,35 @@ function DashboardPresences() {
                {allSessions.length === 0 && <p className="text-muted col-span-3">Aucune séance n'est associée à cette sélection pour le moment.</p>}
              </div>
            </div>
-         )
-      ) : (
-        <div className="animate-fade-in-up">
-          <button onClick={() => setSelectedSession(null)} className="btn btn-outline mb-6 text-sm py-2 bg-white">← Retour aux séances</button>
-          
-          <div className="card shadow-lg" style={{borderLeft: '4px solid var(--secondary)'}}>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-primary">Cahier d'Appel : {selectedSession.classe.nom}</h2>
+         )}
+
+      {/* Modal du Cahier d'Appel */}
+      {selectedSession && (
+        <div className="fixed inset-0 flex items-center justify-center z-[9999] p-2 sm:p-4" style={{ backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-scale-in" style={{ backgroundColor: '#ffffff', border: '1px solid rgba(255,255,255,0.2)' }}>
+            <div className="p-4 sm:p-6 flex justify-between items-start sm:items-center shadow-sm z-10" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+              <div className="pr-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-primary">Cahier d'Appel : {selectedSession.classe.nom}</h2>
                 <div className="text-sm text-muted mt-1 font-bold">{selectedSession.matiere} • {selectedSession.heureDebut} à {selectedSession.heureFin}</div>
               </div>
-              <div className="text-sm font-bold text-muted bg-gray-100 px-3 py-1 rounded border shadow-inner">
-                Séance du {selectedSession.jour} ({getDateForDay(selectedSession.jour)})
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:flex items-center text-sm font-bold text-muted bg-gray-100 px-3 py-1.5 rounded-lg border shadow-inner">
+                  <span className="mr-2">Séance du {selectedSession.jour} :</span>
+                  <input type="date" value={customDate} onChange={handleDateChange} className="bg-transparent outline-none cursor-pointer text-gray-700 font-bold" />
+                </div>
+                <button onClick={() => setSelectedSession(null)} className="p-2 hover:bg-gray-100 rounded-md text-gray-500 transition-colors">
+                  <X size={24} />
+                </button>
               </div>
             </div>
             
-            <div className="overflow-x-auto">
+            <div className="p-0 sm:p-6 overflow-y-auto flex-1" style={{ backgroundColor: '#f9fafb' }}>
+              <div className="sm:hidden flex justify-center items-center gap-2 text-xs font-bold px-2 py-3" style={{ backgroundColor: '#f3f4f6', color: '#4b5563', borderBottom: '1px solid #e5e7eb' }}>
+                <span>{selectedSession.jour} :</span>
+                <input type="date" value={customDate} onChange={handleDateChange} className="bg-white border rounded px-1 py-0.5 outline-none font-bold" />
+              </div>
+            
+              <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="border-b-2" style={{borderColor: 'var(--border-color)'}}>
@@ -2734,15 +2782,15 @@ function DashboardPresences() {
                   {!selectedSession.classe.eleves || selectedSession.classe.eleves.length === 0 ? (
                     <tr><td colSpan="3" className="py-8 text-center italic text-muted">Aucun élève inscrit dans cette classe.</td></tr>
                   ) : (
-                    selectedSession.classe.eleves.map(eleve => (
-                      <tr key={eleve._id} className="border-b border-gray-100 hover:bg-[#fdfaf5] transition-colors">
-                        <td className="py-3 px-2 font-bold">{eleve.nom}</td>
-                        <td className="py-3 px-2 text-muted text-sm font-mono text-center">{eleve.identifiant}</td>
-                        <td className="py-3 px-2 bg-gray-50/50">
-                          <div className="flex gap-4 justify-center">
+                    selectedSession.classe.eleves.map((eleve, idx) => (
+                      <tr key={eleve._id} className={`border-b-2 border-slate-200 transition-colors hover:bg-yellow-50 ${idx % 2 === 0 ? 'bg-[#f0f9ff]' : 'bg-[#ffffff]'}`}>
+                        <td className="py-4 px-3 font-bold text-gray-800 border-r border-gray-100">{eleve.nom}</td>
+                        <td className="py-4 px-3 text-muted text-sm font-mono text-center border-r border-gray-100">{eleve.identifiant}</td>
+                        <td className="py-4 px-3 text-center">
+                          <div className="grid grid-cols-2 lg:flex lg:flex-nowrap gap-2 justify-center items-center lg:w-max mx-auto">
                             {['Présent', 'Absent', 'Retard', 'Exclu'].map(etat => (
-                              <label key={etat} className={`flex items-center gap-1 text-sm cursor-pointer font-bold ${etat==='Présent'?'hover:text-green-600':etat==='Absent'?'hover:text-red-500':etat==='Retard'?'hover:text-orange-500':'hover:text-purple-600'}`}>
-                                <input type="radio" checked={attendance[eleve._id] === etat} onChange={() => setAttendance({...attendance, [eleve._id]: etat})} className={`w-4 h-4 cursor-pointer accent-${etat==='Présent'?'green-600':etat==='Absent'?'red-600':etat==='Retard'?'orange-500':'purple-600'}`} /> {etat}
+                              <label key={etat} className={`flex items-center justify-center gap-1.5 px-2 py-2 lg:px-3 lg:py-1.5 rounded-lg lg:rounded-full border text-xs lg:text-sm cursor-pointer font-bold transition-all hover:shadow-sm ${attendance[eleve._id] === etat ? (etat==='Présent'?'bg-green-50 border-green-200 text-green-700':etat==='Absent'?'bg-red-50 border-red-200 text-red-700':etat==='Retard'?'bg-orange-50 border-orange-200 text-orange-700':'bg-purple-50 border-purple-200 text-purple-700') : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                                <input type="radio" checked={attendance[eleve._id] === etat} onChange={() => setAttendance({...attendance, [eleve._id]: etat})} className={`w-3.5 h-3.5 lg:w-4 lg:h-4 cursor-pointer accent-${etat==='Présent'?'green-600':etat==='Absent'?'red-600':etat==='Retard'?'orange-500':'purple-600'}`} /> {etat}
                               </label>
                             ))}
                           </div>
@@ -2752,12 +2800,13 @@ function DashboardPresences() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
             
             {selectedSession.classe.eleves && selectedSession.classe.eleves.length > 0 && (
-              <div className="mt-8 pt-4 border-t flex justify-end" style={{borderColor: 'var(--border-color)'}}>
-                <button className="btn btn-primary shadow-md hover:shadow-lg transition-transform hover:-translate-y-1" onClick={async () => {
-                  const dateStr = getDateForDay(selectedSession.jour);
+              <div className="p-4 border-t flex justify-end bg-white" style={{borderColor: '#e5e7eb'}}>
+                <button className="btn btn-primary w-full sm:w-auto shadow-md hover:shadow-lg transition-transform hover:-translate-y-1" onClick={async () => {
+                  const dateStr = toFrDate(customDate);
                   const profId = typeof selectedSession.professeur === 'object' ? selectedSession.professeur?._id : selectedSession.professeur;
                   const records = selectedSession.classe.eleves.map(e => ({
                     eleve: e._id,
