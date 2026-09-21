@@ -636,7 +636,7 @@ function DashboardLayout() {
           </button>
         </div>
 
-        <nav className="flex-col flex" style={{ flex: 1, minHeight: 0, overflowY: 'scroll', WebkitOverflowScrolling: 'touch', paddingRight: '4px', paddingBottom: '20px' }} onClick={(e) => { if (e.target.closest('a')) setMobileMenuOpen(false); }}>
+        <nav className="flex-col flex" style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', paddingRight: '4px', paddingBottom: '20px' }} onClick={(e) => { if (e.target.closest('a')) setMobileMenuOpen(false); }}>
           <div className="text-xs font-bold text-muted mb-2 px-2 uppercase">Menu Principal</div>
           <Link to="/dashboard" className="sidebar-link active"><Grid size={18} /> Tableau de Bord</Link>
           <Link to="/dashboard/mon-profil" className="sidebar-link"><User size={18} /> Mon Profil</Link>
@@ -2573,8 +2573,10 @@ function DashboardPresences() {
   const userText = localStorage.getItem('lycee_user');
   const user = userText ? JSON.parse(userText) : null;
   const isProf = user && (user.role === 'professeur' || user.role === 'prof');
+  const isDirection = user && (user.role === 'directeur' || user.role === 'admin' || user.role === 'administratif');
 
   const [classes, setClasses] = useState([]);
+  const [selectedClassForPresences, setSelectedClassForPresences] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [attendance, setAttendance] = useState({});
@@ -2641,6 +2643,8 @@ function DashboardPresences() {
     const joursOrdre = { 'Lundi': 1, 'Mardi': 2, 'Mercredi': 3, 'Jeudi': 4, 'Vendredi': 5, 'Samedi': 6 };
     
     classes.forEach(cls => {
+      if (isDirection && selectedClassForPresences && cls._id !== selectedClassForPresences._id) return;
+      
       if (cls.emploiDuTemps) {
         cls.emploiDuTemps.forEach(s => {
           const profId = typeof s.professeur === 'object' ? s.professeur?._id : s.professeur;
@@ -2660,29 +2664,51 @@ function DashboardPresences() {
 
   return (
     <div>
-      <h1 className="text-4xl font-bold mb-2 text-primary flex items-center"><Users className="mr-3" size={32} /> Classes & Présences</h1>
-      <p className="text-muted mb-8">Sélectionnez une séance pour faire l'appel et gérer les absences.</p>
+      <h1 className="text-4xl font-bold mb-2 text-primary flex items-center"><Users className="mr-3" size={32} /> {isDirection ? 'Supervision : Classes & Présences' : 'Classes & Présences'}</h1>
+      <p className="text-muted mb-8">{isDirection ? 'Vue globale pour superviser l\'appel et les absences dans toutes les classes.' : 'Sélectionnez une séance pour faire l\'appel et gérer les absences.'}</p>
       
       {!selectedSession ? (
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-           {allSessions.map((seance, idx) => (
-             <div onClick={() => handleSelectSession(seance)} key={idx} className="card hover:border-secondary cursor-pointer transition-colors border-t-4" style={{borderTopColor: 'var(--primary)'}}>
-               <div className="flex justify-between items-start mb-2">
-                 <h3 className="text-xl font-bold text-primary truncate" title={seance.classe.nom}>{seance.classe.nom}</h3>
-                 <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded shrink-0">{seance.jour}</span>
+         isDirection && !selectedClassForPresences ? (
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-fade-in-up">
+             {classes.map(cls => (
+               <div key={cls._id} onClick={() => setSelectedClassForPresences(cls)} className="card cursor-pointer hover:border-secondary transition-all text-center border-t-4" style={{borderTopColor: 'var(--primary)'}}>
+                 <div className="w-12 h-12 bg-[#fdfaf5] border border-[#e4d4b4] rounded-full flex items-center justify-center mx-auto mb-3 text-secondary">
+                   <Users size={24} />
+                 </div>
+                 <h3 className="font-bold text-xl text-primary mb-1">{cls.nom}</h3>
+                 <div className="text-sm font-bold bg-blue-50 text-blue-800 rounded px-2 py-1 inline-block w-fit mx-auto mt-2">{cls.eleves?.length || 0} Élèves</div>
                </div>
-               <div className="text-muted font-bold mb-2">{seance.matiere}</div>
-               <div className="text-muted text-sm flex items-center gap-2 mb-4"><Clock size={14}/> {seance.heureDebut} - {seance.heureFin}</div>
-               <div className="text-xs font-bold text-secondary bg-[#fdfaf5] border border-[#e4d4b4] rounded p-1 inline-block">
-                 {seance.classe.eleves?.length || 0} Élèves inscrits
-               </div>
+             ))}
+           </div>
+         ) : (
+           <div className="animate-fade-in-up">
+             {isDirection && selectedClassForPresences && (
+                <div className="mb-6 flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                  <h2 className="text-xl font-bold text-primary flex items-center"><BookOpen className="mr-2 text-secondary" size={24} /> Séances de la classe : {selectedClassForPresences.nom}</h2>
+                  <button onClick={() => setSelectedClassForPresences(null)} className="btn btn-outline text-sm py-1">← Changer de classe</button>
+                </div>
+             )}
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+               {allSessions.map((seance, idx) => (
+                 <div onClick={() => handleSelectSession(seance)} key={idx} className="card hover:border-secondary cursor-pointer transition-colors border-t-4" style={{borderTopColor: 'var(--primary)'}}>
+                   <div className="flex justify-between items-start mb-2">
+                     <h3 className="text-xl font-bold text-primary truncate" title={seance.classe.nom}>{seance.classe.nom}</h3>
+                     <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded shrink-0">{seance.jour}</span>
+                   </div>
+                   <div className="text-muted font-bold mb-2">{seance.matiere}</div>
+                   <div className="text-muted text-sm flex items-center gap-2 mb-4"><Clock size={14}/> {seance.heureDebut} - {seance.heureFin}</div>
+                   <div className="text-xs font-bold text-secondary bg-[#fdfaf5] border border-[#e4d4b4] rounded p-1 inline-block">
+                     {seance.classe.eleves?.length || 0} Élèves inscrits
+                   </div>
+                 </div>
+               ))}
+               {allSessions.length === 0 && <p className="text-muted col-span-3">Aucune séance n'est associée à cette sélection pour le moment.</p>}
              </div>
-           ))}
-           {allSessions.length === 0 && <p className="text-muted col-span-3">Aucune séance n'est associée à votre profil pour le moment.</p>}
-         </div>
+           </div>
+         )
       ) : (
         <div className="animate-fade-in-up">
-          <button onClick={() => setSelectedSession(null)} className="btn btn-outline mb-6 text-sm py-2">← Retour aux séances</button>
+          <button onClick={() => setSelectedSession(null)} className="btn btn-outline mb-6 text-sm py-2 bg-white">← Retour aux séances</button>
           
           <div className="card shadow-lg" style={{borderLeft: '4px solid var(--secondary)'}}>
             <div className="flex justify-between items-center mb-6">
@@ -2768,9 +2794,11 @@ function DashboardPlanning() {
   const userText = localStorage.getItem('lycee_user');
   const user = userText ? JSON.parse(userText) : null;
   const isProf = user && (user.role === 'professeur' || user.role === 'prof');
+  const isDirection = user && (user.role === 'directeur' || user.role === 'admin' || user.role === 'administratif');
 
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedClassForModal, setSelectedClassForModal] = useState(null);
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/classes`)
@@ -2787,10 +2815,10 @@ function DashboardPlanning() {
 
   if (loading) return <div className="p-8 text-center text-muted">Chargement de l'emploi du temps...</div>;
 
-  const getSessionsByDay = () => {
+  const getSessionsByDay = (classesToProcess) => {
     let days = { 'Lundi': [], 'Mardi': [], 'Mercredi': [], 'Jeudi': [], 'Vendredi': [], 'Samedi': [] };
     
-    classes.forEach(cls => {
+    classesToProcess.forEach(cls => {
       if (cls.emploiDuTemps) {
         cls.emploiDuTemps.forEach(s => {
           const profId = typeof s.professeur === 'object' ? s.professeur?._id : s.professeur;
@@ -2821,58 +2849,185 @@ function DashboardPlanning() {
     return days;
   };
 
-  const schedule = getSessionsByDay();
   const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
-  return (
-    <div className="animate-fade-in-up">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-           <h1 className="text-4xl font-bold mb-2 text-primary flex items-center"><Clock className="mr-3" size={32} /> Mon Emploi du Temps</h1>
-           <p className="text-muted">Consultez vos horaires de cours de la semaine par date, matière et salle.</p>
-        </div>
-      </div>
-      
-      <div className="card p-0 overflow-hidden border-t-4" style={{borderTopColor: 'var(--secondary)'}}>
-        <div className="overflow-x-auto">
-           <table className="w-full text-center border-collapse min-w-[900px]">
-             <thead>
-               <tr>
-                 {jours.map(j => <th key={j} className="border p-3 bg-primary text-white font-bold w-1/6" style={{borderColor: 'var(--border-color)'}}>{j}</th>)}
-               </tr>
-             </thead>
-             <tbody>
-               <tr>
-                 {jours.map(jour => {
-                   const seances = schedule[jour];
-                   return (
-                     <td key={jour} className="border align-top p-2 bg-gray-50/50" style={{borderColor: 'var(--border-color)', height: '400px', minWidth: '150px'}}>
-                       {seances.length === 0 ? (
-                         <div className="text-muted italic text-xs py-10 opacity-60">Aucun cours</div>
-                       ) : (
-                         <div className="flex flex-col gap-3">
-                           {seances.map((s, idx) => (
-                             <div key={idx} className="bg-white border rounded shadow-sm p-3 text-left hover:shadow-md transition-shadow relative overflow-hidden group" style={{borderColor: '#e4d4b4'}}>
-                               <div className="absolute top-0 left-0 w-1 h-full bg-secondary transition-all group-hover:w-2"></div>
-                               <div className="text-xs font-bold text-gray-500 mb-1 flex items-center"><Clock size={12} className="mr-1"/> {s.heureDebut} - {s.heureFin}</div>
-                               <div className="font-bold text-primary mb-1 truncate" title={s.classe.nom}>{s.classe.nom}</div>
-                               <div className="text-sm font-bold text-secondary my-1 truncate" title={s.matiere}>{s.matiere}</div>
-                               <div className="text-[10px] text-muted flex items-center bg-[#fdfaf5] border rounded px-1.5 py-0.5 inline-block w-fit mt-1" style={{borderColor: '#e4d4b4'}}>
-                                 Salle : {s.salle || 'À définir'}
-                               </div>
+  const renderScheduleTable = (scheduleData) => {
+    let timeSlots = new Set();
+    jours.forEach(j => {
+      (scheduleData[j] || []).forEach(s => {
+        timeSlots.add(`${s.heureDebut} - ${s.heureFin}`);
+      });
+    });
+
+    let sortedSlots = Array.from(timeSlots).sort((a, b) => {
+      const aStart = a.split(' - ')[0];
+      const bStart = b.split(' - ')[0];
+      return aStart.localeCompare(bStart);
+    });
+
+    const getColorForMatiere = (matiere) => {
+      if (!matiere) return '#ffffff';
+      const m = matiere.toLowerCase();
+      if (m.includes('math')) return '#dcfce7'; 
+      if (m.includes('fran')) return '#fce7f3'; 
+      if (m.includes('arab')) return '#ffedd5'; 
+      if (m.includes('anglai')) return '#fee2e2'; 
+      if (m.includes('science') || m.includes('svt')) return '#d1fae5'; 
+      if (m.includes('hist') || m.includes('géo') || m.includes('civique')) return '#ffe4e6'; 
+      if (m.includes('informatique') || m.includes('tech')) return '#dbeafe'; 
+      if (m.includes('sport') || m.includes('eps')) return '#ecfccb'; 
+      if (m.includes('art') || m.includes('music') || m.includes('plast')) return '#f3e8ff'; 
+      return '#f3f4f6'; 
+    };
+
+    return (
+      <div className="schedule-table-wrapper" style={{ flex: 1, overflow: 'auto', backgroundColor: '#ffffff', WebkitOverflowScrolling: 'touch', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', display: 'block', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', scrollbarWidth: 'auto', scrollbarColor: 'rgba(100, 100, 100, 0.7) transparent' }}>
+        <style dangerouslySetInnerHTML={{__html: `
+          .schedule-table-wrapper::-webkit-scrollbar { height: 16px; }
+          .schedule-table-wrapper::-webkit-scrollbar-track { background: transparent; border-radius: 10px; margin: 4px; }
+          .schedule-table-wrapper::-webkit-scrollbar-thumb { background: rgba(100, 100, 100, 0.7); border-radius: 10px; border: 4px solid #ffffff; }
+        `}} />
+        <table className="text-center border-collapse text-sm" style={{ width: '100%', minWidth: '800px' }}>
+          <thead>
+            <tr>
+              <th className="p-4 font-bold min-w-[90px] sm:w-32" style={{ backgroundColor: '#ffffff', color: '#1f2937', border: '1px solid #e5e7eb' }}>&nbsp;</th>
+              {jours.map(j => <th key={j} className="p-3 sm:p-4 font-bold min-w-[120px]" style={{ backgroundColor: '#ffffff', color: '#1f2937', border: '1px solid #e5e7eb' }}>{j}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedSlots.flatMap((slot, index) => {
+              const rows = [];
+              if (index > 0 && Number(slot.substring(0, 2)) >= 12 && Number(sortedSlots[index-1].substring(0, 2)) < 12) {
+                rows.push(
+                  <tr key={"pause-"+index}>
+                    <td className="p-2 font-bold" style={{ backgroundColor: '#ffffff', color: '#1f2937', border: '1px solid #e5e7eb' }}>Pause</td>
+                    <td colSpan="6" className="p-2 font-bold text-center" style={{ backgroundColor: '#ffffff', color: '#1f2937', border: '1px solid #e5e7eb' }}>Pause</td>
+                  </tr>
+                );
+              }
+              rows.push(
+                <tr key={index}>
+                  <td className="p-3 font-medium" style={{ backgroundColor: '#ffffff', color: '#1f2937', border: '1px solid #e5e7eb' }}>{slot}</td>
+                  {jours.map(jour => {
+                    const seances = (scheduleData[jour] || []).filter(s => `${s.heureDebut} - ${s.heureFin}` === slot);
+                    
+                    if (seances.length === 0) {
+                      return <td key={jour} className="border p-3 bg-gray-50/20" style={{borderColor: '#e5e7eb'}}></td>;
+                    }
+                    
+                    return (
+                      <td key={jour} className="border p-2 min-h-[4rem] text-center align-middle" style={{borderColor: '#e5e7eb', backgroundColor: getColorForMatiere(seances[0].matiere)}}>
+                        {seances.map((seance, sIdx) => {
+                           const profName = typeof seance.professeur === 'object' ? seance.professeur?.nom ? `${seance.professeur.prenom ? seance.professeur.prenom.charAt(0)+'.' : 'Mme.'} ${seance.professeur.nom}` : '' : 'Professeur';
+                           return (
+                             <div key={sIdx} className={sIdx > 0 ? "mt-2 pt-2 border-t border-black/10" : ""}>
+                               <div className="text-gray-900 text-sm font-medium">{seance.matiere}</div>
+                               <div className="text-xs text-gray-700 mt-1">{profName ? `(${profName})` : ''}</div>
+                               {!isDirection && seance.classe && seance.classe.nom && <div className="text-[10px] text-primary mt-1 font-bold">{seance.classe.nom}</div>}
                              </div>
-                           ))}
-                         </div>
-                       )}
-                     </td>
-                   );
-                 })}
-               </tr>
-             </tbody>
-           </table>
-        </div>
+                           );
+                        })}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+              return rows;
+            })}
+            {sortedSlots.length === 0 && (
+              <tr><td colSpan="7" className="p-8 text-muted italic">Aucun cours disponible.</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
-    </div>
+    );
+  };
+
+  return (
+    <>
+      <div className="animate-fade-in-up">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 text-primary flex items-center"><Clock className="mr-3" size={32} /> {isDirection ? 'Planning Global du Collège' : 'Mon Emploi du Temps'}</h1>
+            <p className="text-muted">{isDirection ? 'Sélectionnez une classe pour visualiser son emploi du temps.' : 'Consultez vos horaires de cours de la semaine par date, matière et salle.'}</p>
+          </div>
+        </div>
+        
+        {isDirection ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {classes.map(cls => (
+              <div key={cls._id} onClick={() => setSelectedClassForModal(cls)} className="card cursor-pointer hover:border-secondary transition-all text-center">
+                <div className="w-12 h-12 bg-[#fdfaf5] border border-[#e4d4b4] rounded-full flex items-center justify-center mx-auto mb-3 text-secondary">
+                  <BookOpen size={24} />
+                </div>
+                <h3 className="font-bold text-xl text-primary mb-1">{cls.nom}</h3>
+                <div className="text-sm text-muted">{cls.niveau || 'Niveau non défini'}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card p-0 overflow-hidden border-t-4" style={{borderTopColor: 'var(--secondary)'}}>
+            {renderScheduleTable(getSessionsByDay(classes))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal Emploi du Temps pour le directeur, rendu en dehors de animate-fade-in-up */}
+      {selectedClassForModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-[9999] p-2 sm:p-4" style={{ backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <style dangerouslySetInnerHTML={{__html: `
+            @media print {
+              @page { size: landscape; margin: 10mm; }
+              html, body { height: 100vh !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; }
+              body * { visibility: hidden !important; }
+              #printable-schedule {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: 100% !important;
+                max-height: 100vh !important;
+                transform: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+              }
+              #printable-schedule * { visibility: visible !important; }
+              .schedule-table-wrapper { overflow: visible !important; height: auto !important; max-height: none !important; }
+              .schedule-table-wrapper::-webkit-scrollbar { display: none !important; }
+              .no-print { display: none !important; }
+              table { width: 100% !important; font-size: 10pt !important; page-break-inside: auto !important; }
+              tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+              td, th { padding: 4px !important; }
+            }
+          `}} />
+          <div id="printable-schedule" className="w-full max-w-3xl flex flex-col overflow-hidden animate-scale-in" style={{ backgroundColor: '#ffffff', borderRadius: '1rem', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.2)', maxHeight: '85vh', margin: 'auto' }}>
+            <div className="p-3 sm:p-4 flex justify-between items-center shadow-sm z-10" style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb' }}>
+              <h2 className="text-[15px] sm:text-lg font-bold" style={{ color: '#1f2937', margin: 0 }}>Emploi du Temps - Classe : {selectedClassForModal.nom}</h2>
+              <button onClick={() => setSelectedClassForModal(null)} className="no-print p-1 sm:p-1.5 hover:bg-gray-100 rounded-md font-medium transition-colors" style={{ color: '#9ca3af', border: 'none', background: 'transparent', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-0 sm:p-6 flex-1 flex flex-col" style={{ backgroundColor: '#f9fafb', minHeight: 0, minWidth: 0, width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div className="no-print flex sm:hidden justify-center items-center py-2 px-4 shadow-inner" style={{ backgroundColor: '#e0f2fe', color: '#0369a1', fontSize: '11px', fontWeight: 'bold', flexShrink: 0 }}>
+                👈 Faites glisser le tableau horizontalement pour voir toute la semaine 👉
+              </div>
+              {renderScheduleTable(getSessionsByDay([selectedClassForModal]))}
+            </div>
+            <div className="no-print p-3 sm:p-4 flex justify-end gap-2 sm:gap-3" style={{ backgroundColor: '#ffffff', borderTop: '1px solid #e5e7eb' }}>
+              <button onClick={() => window.print()} className="hidden sm:flex items-center gap-2 transition-colors" style={{ backgroundColor: '#ffffff', color: '#374151', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 'bold', borderRadius: '0.375rem', padding: '0.5rem 1.25rem' }}>Imprimer</button>
+              <button onClick={() => setSelectedClassForModal(null)} className="w-full sm:w-auto transition-colors text-center" style={{ backgroundColor: '#ffffff', color: '#374151', border: '1px solid #d1d5db', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 'bold', borderRadius: '0.375rem', padding: '0.5rem 1.25rem' }}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
