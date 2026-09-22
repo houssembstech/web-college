@@ -5,7 +5,7 @@ import { BulletinModal } from './BulletinModal';
 import DashboardPaiements from './DashboardPaiements';
 import DashboardActivities from './DashboardActivities';
 import PublicActivitiesPage from './PublicActivitiesPage';
-import { Home, Info, User, Mail, Activity, Phone, LogIn, UserPlus, Grid, Users, BookOpen, Clock, Settings, FileText, MessageSquare, Heart, Bus, Star, Award, ShieldCheck, HeartHandshake, Edit, Trash2, X, Calendar, UserX, Lock, ChevronDown, ChevronRight, CheckCircle, Menu, CreditCard, Eye, EyeOff } from 'lucide-react';
+import { Home, Info, MapPin, User, Mail, Activity, Phone, LogIn, UserPlus, Grid, Users, BookOpen, Clock, Settings, FileText, MessageSquare, Heart, Bus, Star, Award, ShieldCheck, HeartHandshake, Edit, Trash2, X, Calendar, UserX, Lock, ChevronDown, ChevronRight, CheckCircle, Menu, CreditCard, Eye, EyeOff } from 'lucide-react';
 
 export const OFFICIAL_SUBJECTS = [
   "Arabe expression écrite", "Arabe étude de texte", "Arabe.Oral", "ARABE", 
@@ -76,6 +76,9 @@ function HomePage() {
     <>
       <section className="hero py-20">
         <div className="container text-center hero-content">
+          <div style={{ backgroundColor: '#fee2e2', color: '#dc2626', padding: '8px 16px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontWeight: 'bold', fontSize: '14px', border: '1px solid #fecaca' }}>
+            <Info size={16} /> Ce site est une proposition pour le collège, pas un site officiel.
+          </div>
           <h1 className="text-5xl mb-4 font-bold" style={{ color: 'var(--primary)' }}>Plus qu'un collège, un avenir.</h1>
           <p className="text-2xl text-muted mb-8 max-w-2xl mx-auto">
             Bienvenue au Collège Privé Excellence School Monastir. Nous formons les leaders de demain de la 7ème à la 9ème année en alliant exigence, épanouissement et réussite.
@@ -116,6 +119,65 @@ function HomePage() {
             </div>
             <h3 className="text-2xl mb-2">Vie scolaire riche</h3>
             <p className="text-muted">Des clubs, événements et activités pour un développement complet.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Nouvelle Section Créative pour la carte */}
+      <section style={{ backgroundColor: '#f8fafc', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, var(--primary), var(--secondary))' }}></div>
+        <div className="container py-20" style={{ position: 'relative', zIndex: 10 }}>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span style={{ color: 'var(--secondary)', fontSize: '12px', fontWeight: 'bold', letterSpacing: '2px', textTransform: 'uppercase' }}>Où nous trouver</span>
+            <h2 className="text-4xl text-center mb-2 font-bold" style={{ color: 'var(--primary)', marginTop: '8px' }}>Notre Campus</h2>
+            <p className="text-xl text-muted">Situé au cœur de Monastir, un environnement idéal pour l'apprentissage.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0', backgroundColor: '#fff', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}>
+            
+            {/* Colonne Informations */}
+            <div style={{ padding: '40px', backgroundColor: 'var(--primary)', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <div style={{ width: '60px', height: '60px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px' }}>
+                <MapPin size={32} style={{ color: 'var(--secondary)' }} />
+              </div>
+              <h3 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '16px' }}>Collège Excellence</h3>
+              <p style={{ fontSize: '16px', opacity: 0.9, lineHeight: 1.6, marginBottom: '24px' }}>
+                Notre établissement offre un cadre spacieux, sécurisé et moderne, parfaitement desservi par les transports.
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <MapPin size={20} style={{ color: 'var(--secondary)' }} />
+                  <span style={{ fontSize: '15px' }}>Route de la Corniche, Monastir 5000</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Clock size={20} style={{ color: 'var(--secondary)' }} />
+                  <span style={{ fontSize: '15px' }}>Lun - Sam : 08h00 - 18h00</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Bus size={20} style={{ color: 'var(--secondary)' }} />
+                  <span style={{ fontSize: '15px' }}>Transport scolaire assuré</span>
+                </div>
+              </div>
+              
+              <a href="https://www.google.com/maps/search/?api=1&query=35°45'47.9%22N+10°49'32.3%22E" target="_blank" rel="noreferrer" style={{ marginTop: '36px', display: 'inline-flex', alignItems: 'center', justifySelf: 'start', justifyContent: 'center', gap: '8px', backgroundColor: 'var(--secondary)', color: 'var(--primary)', padding: '12px 24px', borderRadius: '12px', fontWeight: 'bold', textDecoration: 'none', transition: 'transform 0.2s', width: 'fit-content' }}>
+                Afficher sur la Carte
+              </a>
+            </div>
+
+            {/* Colonne Carte Interactive (Iframe) */}
+            <div style={{ minHeight: '400px', width: '100%', position: 'relative' }}>
+               <iframe 
+                  src="https://maps.google.com/maps?width=100%25&height=600&hl=fr&q=35°45'47.9%22N%2010°49'32.3%22E+(Coll%C3%A8ge%20Excellence)&t=&z=17&ie=UTF8&iwloc=B&output=embed" 
+                  width="100%" 
+                  height="100%" 
+                  style={{ border: 0, minHeight: '100%', objectFit: 'cover' }}
+                  allowFullScreen="" 
+                  loading="lazy" 
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Carte Collège Excellence"
+               ></iframe>
+            </div>
           </div>
         </div>
       </section>
