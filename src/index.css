@@ -657,3 +657,20 @@ button {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Messagerie Responsive */
+@media (max-width: 768px) {
+  .messagerie-sidebar {
+    width: 100% !important;
+  }
+  .messagerie-sidebar.hide-on-mobile {
+    display: none !important;
+  }
+  .messagerie-chat {
+    width: 100% !important;
+  }
+  .messagerie-chat.hide-on-mobile {
+    display: none !important;
+  }
+}
+
